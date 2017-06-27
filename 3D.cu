@@ -627,8 +627,19 @@ void printTriangles(string a , TRIANGLE * t,  int tam)
 
 	ofstream myfile;
   	myfile.open ("Triangulos.txt");
-  	myfilen.open("Normales.txt");
+  	//myfilen.open("Normales.txt");
 
+
+  	myfile<<"# .PCD v.5 - Point Cloud Data file format"<<endl;
+	myfile<<"VERSION .5"<<endl;
+	myfile<<"FIELDS x y z"<<endl;
+	myfile<<"SIZE 4 4 4"<<endl;
+	myfile<<"TYPE F F F"<<endl;
+	myfile<<"COUNT 1 1 1"<<endl;
+	myfile<<"WIDTH 742716"<<endl;
+	myfile<<"HEIGHT 1"<<endl;
+	myfile<<"POINTS 742716"<<endl;
+	myfile<<"DATA ascii"<<endl;
 	for(int i =0; i<tam ;i++)
 	{
 		for (int k=0;k<3;k++)  
@@ -646,13 +657,13 @@ void printTriangles(string a , TRIANGLE * t,  int tam)
 	myfile.close();
 	cout<<"numero de triangulos"<<cont<<endl;
 }
-
+/*
 XYZ * CalcNormals(string a , XYZ * data, int tam)
 {
 	XYZ normales[tam];
-	for (i=0;i<NX-1;i++) {
-		for (j=0;j<NY-1;j++) {
-			for (k=0;k<NZ-1;k++)
+	for (int i=0;i<NX-1;i++) {
+		for (int j=0;j<NY-1;j++) {
+			for (int k=0;k<NZ-1;k++)
 			{
 				Normales[n].x=(data[i+1][j][k]+data[i-1,j,k])/0.0001;
 				Normales[n].y=(data[i][j+1][k]-data[i][j-1][k])/0.0001;
@@ -662,7 +673,7 @@ XYZ * CalcNormals(string a , XYZ * data, int tam)
 	}
 	return normales;
 }
-
+*/
 int main(int argc, char *argv[])
 {
 	int i,j,k,c;
@@ -796,10 +807,8 @@ int main(int argc, char *argv[])
 	cout<<"crea sin problemas en host"<<endl;
 	cudaMemcpy(cpy_vectTriangles,d_vectTriangles, sizeTRI, cudaMemcpyDeviceToHost);
 	printTriangles("Printing Tringles \n",cpy_vectTriangles,N);
-	CalcNormals("Calculate Normals \n",data,N);
+	//CalcNormals("Calculate Normals \n",data,N);
 	int n=0;
-
-
 	free(vectTriangles); free(vectGrids); free(cpy_vectTriangles);
 	cudaFree(d_vectTriangles); cudaFree(d_vectGrids);
 	return 0;

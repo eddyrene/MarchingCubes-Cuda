@@ -35,9 +35,9 @@ typedef struct {
 #define NY 160
 #define NZ 160
 */
-#define NX 68//200
-#define NY 128//160
-#define NZ 128//160
+#define NX 200//200
+#define NY 160//160
+#define NZ 160//160
 
 //68 x 256 x 256
 
@@ -114,7 +114,7 @@ void readFile(FILE *fptr, const char * namefile , int themin , int themax, int *
 	fprintf(stderr,"Rango del volumen: %d -> %d\n",themin,themax);
 }
 
-void constructCubes(GRIDCELL * vectGrids, int *** data, int gtam)
+int constructCubes(GRIDCELL * vectGrids, int *** data)
 {
 		int i,j,k;
 		//fprintf(stderr,"Construyendo Cubos ...\n");
@@ -158,13 +158,14 @@ void constructCubes(GRIDCELL * vectGrids, int *** data, int gtam)
 		            grid.p[7].y = j+1;
 		            grid.p[7].z = k+1;
 						grid.val[7] = data[i][j+1][k+1];
-					
-					vectGrids[i+j*NY+k*NY*NZ]=grid;
+					vectGrids[cont]=grid;
 					cont++;
-					//cout<<cont<<endl;
+					
 				}
 			}
 		}
+		cout<<"numero de datos ingresados "<<cont<<endl;
+		return cont;
 }
 __device__
 XYZ VertexInterp(double isolevel,XYZ p1,XYZ p2,double valp1,double valp2)
@@ -198,7 +199,7 @@ XYZ defect()
 	return a;
 }
 
-
+/*
 __global__
 void coyGRID(GRIDCELL * a, GRIDCELL * b, int x, int y, int z)
 {
@@ -209,8 +210,10 @@ void coyGRID(GRIDCELL * a, GRIDCELL * b, int x, int y, int z)
 	{
 		a[ij].p = b[ij].p;
 		a[ij].val = b[ij].val;
-	}*/
+	}
 }
+*/
+/*
 __global__
 void copyGRID1(GRIDCELL * a, GRIDCELL * b, int x, int y, int z)
 {
@@ -222,23 +225,26 @@ void copyGRID1(GRIDCELL * a, GRIDCELL * b, int x, int y, int z)
 	{
 		for(int w=0;w<8;w++)
 		{
-			a[i+j*y+k*y*z].p[w] = b[i+j*y+k*y*z].p[w];
-			a[i+j*y+k*y*z].val[w] = b[i+j*y+k*y*z].val[w];
+			a[i].p[w] = b[i].p[w];
+			a[i].val[w] = b[i].val[w];
 		}
 	}
-}
+}*/
 /*
 __global__
 void PolygoniseCube(XYZ * vertlist ,GRIDCELL * g ,double iso, int x ,int y , int z)
 */
+
+__device__ int ntri=0;
+
 __global__
-void PolygoniseCube(TRIANGLE * tris,GRIDCELL * g ,double iso, int x ,int y , int z)
+void PolygoniseCube(TRIANGLE * d_vectTriangles,GRIDCELL * g , int n)
 {
-	//printf("g %d \n",iso);
-	int i = threadIdx.x + blockDim.x * blockIdx.x;
-    int j = threadIdx.y + blockDim.y * blockIdx.y;
-    int k = threadIdx.z + blockDim.z * blockIdx.z;
-	if(i<x && j<y && k<z)
+	int iso=80;
+	int ind = threadIdx.x + blockDim.x * blockIdx.x;
+	//printf("este si %d \n",ind);		  
+	//return ;
+	if(ind<n)
 	{
 		//printf("thread %d \n", g[i].p[7].x);
 		int cubeindex;
@@ -279,21 +285,19 @@ void PolygoniseCube(TRIANGLE * tris,GRIDCELL * g ,double iso, int x ,int y , int
 		0x70c, 0x605, 0x50f, 0x406, 0x30a, 0x203, 0x109, 0x0   };
 
 
-		//int i,ntri = 0;
-
 		cubeindex = 0;
 
-		if (g[i+j*y+k*y*z].val[0] < iso) cubeindex |= 1;
-		if (g[i+j*y+k*y*z].val[1] < iso) cubeindex |= 2;
-		if (g[i+j*y+k*y*z].val[2] < iso) cubeindex |= 4;
-		if (g[i+j*y+k*y*z].val[3] < iso) cubeindex |= 8;
-		if (g[i+j*y+k*y*z].val[4] < iso) cubeindex |= 16;
-		if (g[i+j*y+k*y*z].val[5] < iso) cubeindex |= 32;
-		if (g[i+j*y+k*y*z].val[6] < iso) cubeindex |= 64;
-		if (g[i+j*y+k*y*z].val[7] < iso) cubeindex |= 128;
+		if (g[ind].val[0] < iso) cubeindex |= 1;
+		if (g[ind].val[1] < iso) cubeindex |= 2;
+		if (g[ind].val[2] < iso) cubeindex |= 4;
+		if (g[ind].val[3] < iso) cubeindex |= 8;
+		if (g[ind].val[4] < iso) cubeindex |= 16;
+		if (g[ind].val[5] < iso) cubeindex |= 32;
+		if (g[ind].val[6] < iso) cubeindex |= 64;
+		if (g[ind].val[7] < iso) cubeindex |= 128;
 		
-
-		int triTable[256][16] =
+		//printf("Est parte normal  %d \n",cubeindex );
+		 int triTable[256][16] =
 			{{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
 			{0, 8, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
 			{0, 1, 9, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
@@ -551,53 +555,60 @@ void PolygoniseCube(TRIANGLE * tris,GRIDCELL * g ,double iso, int x ,int y , int
 			{0, 3, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
 			{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1}};
 
-	   if (edgeTable[cubeindex] == 0)
-	      return;
-	   /* Find the vertices where the surface intersects the cube */
-	   if (edgeTable[cubeindex] & 1) {
-	      vertlist[i+j*y+k*y*z+0] = VertexInterp(iso,g[i+j*y+k*y*z].p[0],g[i+j*y+k*y*z].p[1],g[i+j*y+k*y*z].val[0],g[i+j*y+k*y*z].val[1]);
-	   }
-	   if (edgeTable[cubeindex] & 2) {
-	      vertlist[i+j*y+k*y*z+1] = VertexInterp(iso,g[i+j*y+k*y*z].p[1],g[i+j*y+k*y*z].p[2],g[i+j*y+k*y*z].val[1],g[i+j*y+k*y*z].val[2]);
-	   }
-	   if (edgeTable[cubeindex] & 4) {
-	      vertlist[i+j*y+k*y*z+2] = VertexInterp(iso,g[i+j*y+k*y*z].p[2],g[i+j*y+k*y*z].p[3],g[i+j*y+k*y*z].val[2],g[i+j*y+k*y*z].val[3]);
-	   }
-	   if (edgeTable[cubeindex] & 8) {
-	      vertlist[i+j*y+k*y*z+3] = VertexInterp(iso,g[i+j*y+k*y*z].p[3],g[i+j*y+k*y*z].p[0],g[i+j*y+k*y*z].val[3],g[i+j*y+k*y*z].val[0]);
-	   }
-	   if (edgeTable[cubeindex] & 16) {
-	      vertlist[i+j*y+k*y*z+4] = VertexInterp(iso,g[i+j*y+k*y*z].p[4],g[i+j*y+k*y*z].p[5],g[i+j*y+k*y*z].val[4],g[i+j*y+k*y*z].val[5]);
-	   }
-	   if (edgeTable[cubeindex] & 32) {
-	      vertlist[i+j*y+k*y*z+5] = VertexInterp(iso,g[i+j*y+k*y*z].p[5],g[i+j*y+k*y*z].p[6],g[i+j*y+k*y*z].val[5],g[i+j*y+k*y*z].val[6]);
-	   }
-	   if (edgeTable[cubeindex] & 64) {
-	      vertlist[i+j*y+k*y*z+6] = VertexInterp(iso,g[i+j*y+k*y*z].p[6],g[i+j*y+k*y*z].p[7],g[i+j*y+k*y*z].val[6],g[i+j*y+k*y*z].val[7]);
-	   }
-	   if (edgeTable[cubeindex] & 128) {
-	      vertlist[i+j*y+k*y*z+7] = VertexInterp(iso,g[i+j*y+k*y*z].p[7],g[i+j*y+k*y*z].p[4],g[i+j*y+k*y*z].val[7],g[i+j*y+k*y*z].val[4]);
-	   }
-	   if (edgeTable[cubeindex] & 256) {
-	      vertlist[i+j*y+k*y*z+8] = VertexInterp(iso,g[i+j*y+k*y*z].p[0],g[i+j*y+k*y*z].p[4],g[i+j*y+k*y*z].val[0],g[i+j*y+k*y*z].val[4]);
-	   }
-	   if (edgeTable[cubeindex] & 512) {
-	      vertlist[i+j*y+k*y*z+9] = VertexInterp(iso,g[i+j*y+k*y*z].p[1],g[i+j*y+k*y*z].p[5],g[i+j*y+k*y*z].val[1],g[i+j*y+k*y*z].val[5]);
-	   }
-	   if (edgeTable[cubeindex] & 1024) {
-	      vertlist[i+j*y+k*y*z+10] = VertexInterp(iso,g[i+j*y+k*y*z].p[2],g[i+j*y+k*y*z].p[6],g[i+j*y+k*y*z].val[2],g[i+j*y+k*y*z].val[6]);
-	   }
-	   if (edgeTable[cubeindex] & 2048) {
-	      vertlist[i+j*y+k*y*z+11] = VertexInterp(iso,g[i+j*y+k*y*z].p[3],g[i+j*y+k*y*z].p[7],g[i+j*y+k*y*z].val[3],g[i+j*y+k*y*z].val[7]);
-	   }
-	  // printf("hasta aqui llenaga \n");
-	   //separo memoria para el host y para los triagulos, despues 
-	   //creo una memorai temporal para el vertlist y almaceno en 
-	   //un device memorry los triangulos.
-	}
+			   if (edgeTable[cubeindex] == 0)
+			      return;
+			   /* Find the vertices where the surface intersects the cube */
+			   if (edgeTable[cubeindex] & 1) {
+			      vertlist[0] = VertexInterp(iso,g[ind].p[0],g[ind].p[1],g[ind].val[0],g[ind].val[1]);
+			   }
+			   if (edgeTable[cubeindex] & 2) {
+			      vertlist[1] = VertexInterp(iso,g[ind].p[1],g[ind].p[2],g[ind].val[1],g[ind].val[2]);
+			   }
+			   if (edgeTable[cubeindex] & 4) {
+			      vertlist[2] = VertexInterp(iso,g[ind].p[2],g[ind].p[3],g[ind].val[2],g[ind].val[3]);
+			   }
+			   if (edgeTable[cubeindex] & 8) {
+			      vertlist[3] = VertexInterp(iso,g[ind].p[3],g[ind].p[0],g[ind].val[3],g[ind].val[0]);
+			   }
+			   if (edgeTable[cubeindex] & 16) {
+			      vertlist[4] = VertexInterp(iso,g[ind].p[4],g[ind].p[5],g[ind].val[4],g[ind].val[5]);
+			   }
+			   if (edgeTable[cubeindex] & 32) {
+			      vertlist[5] = VertexInterp(iso,g[ind].p[5],g[ind].p[6],g[ind].val[5],g[ind].val[6]);
+			   }
+			   if (edgeTable[cubeindex] & 64) {
+			      vertlist[6] = VertexInterp(iso,g[ind].p[6],g[ind].p[7],g[ind].val[6],g[ind].val[7]);
+			   }
+			   if (edgeTable[cubeindex] & 128) {
+			      vertlist[7] = VertexInterp(iso,g[ind].p[7],g[ind].p[4],g[ind].val[7],g[ind].val[4]);
+			   }
+			   if (edgeTable[cubeindex] & 256) {
+			      vertlist[8] = VertexInterp(iso,g[ind].p[0],g[ind].p[4],g[ind].val[0],g[ind].val[4]);
+			   }
+			   if (edgeTable[cubeindex] & 512) {
+			      vertlist[9] = VertexInterp(iso,g[ind].p[1],g[ind].p[5],g[ind].val[1],g[ind].val[5]);
+			   }
+			   if (edgeTable[cubeindex] & 1024) {
+			      vertlist[10] = VertexInterp(iso,g[ind].p[2],g[ind].p[6],g[ind].val[2],g[ind].val[6]);
+			   }
+			   if (edgeTable[cubeindex] & 2048) {
+			      vertlist[11] = VertexInterp(iso,g[ind].p[3],g[ind].p[7],g[ind].val[3],g[ind].val[7]);
+			   }
+
+	   	int t=0; 
+	   	//printf("indice %d \n", ind);	
+	   	while(triTable[cubeindex][t] != -1)
+	  	{
+	      d_vectTriangles[ind].p[0] = vertlist[triTable[cubeindex][t]];
+	      d_vectTriangles[ind].p[1] = vertlist[triTable[cubeindex][t+1]];
+	      d_vectTriangles[ind].p[2] = vertlist[triTable[cubeindex][t+2]];
+	      ntri++;
+	      t+=3;
+   		}
+   		//printf("ntri %d \n", ntri);	
+   }
 }
-
-
+	//return ntri;
 void printGrid(string a, GRIDCELL * g, int tam)
 {
 	cout<<a;
@@ -607,14 +618,49 @@ void printGrid(string a, GRIDCELL * g, int tam)
 		      printf("%f \n", g[i].val[j]);		
 }
 
-void printTriangles(string a , TRIANGLE * t, int tam)
+void printTriangles(string a , TRIANGLE * t,  int tam)
 {
+	//numtri=ntri;
+	//printTriangles("Printing Tringles \n",cpy_vectTriangles,N);
 	cout<<a;
+	int cont=0;
+
+	ofstream myfile;
+  	myfile.open ("Triangulos.txt");
+  	myfilen.open("Normales.txt");
+
 	for(int i =0; i<tam ;i++)
 	{
 		for (int k=0;k<3;k++)  
-			cout<<t[i].p[k].x<<" "<<t[i].p[k].y<<" "<<t[i].p[k].z<<endl;
+		{
+			cont++;
+			if(t[i].p[k].x != 0 && t[i].p[k].y != 0  && t[i].p[k].z !=0 )
+			{
+				//fprintf(fptr,"%g %g %g ",t[i].p[k].x,t[i].p[k].y,t[i].p[k].z);	
+				myfile<<t[i].p[k].x<<" "<<t[i].p[k].y<<" "<<t[i].p[k].z<<endl;
+
+			}
+		}
+		//t++;
 	}
+	myfile.close();
+	cout<<"numero de triangulos"<<cont<<endl;
+}
+
+XYZ * CalcNormals(string a , XYZ * data, int tam)
+{
+	XYZ normales[tam];
+	for (i=0;i<NX-1;i++) {
+		for (j=0;j<NY-1;j++) {
+			for (k=0;k<NZ-1;k++)
+			{
+				Normales[n].x=(data[i+1][j][k]+data[i-1,j,k])/0.0001;
+				Normales[n].y=(data[i][j+1][k]-data[i][j-1][k])/0.0001;
+				Normales[n].z=(data[i][j][k+1]-data[i][j][k-1])/0.0001;		
+				n++;
+			}
+	}
+	return normales;
 }
 
 int main(int argc, char *argv[])
@@ -623,9 +669,9 @@ int main(int argc, char *argv[])
 	int numtri=0;
 	int ***data;
 	FILE *fptr;
-	int N= (NX*NY*NZ);
+	int N= ((NX-1)*(NY-1)*(NZ-1));
 	cout<<N<<endl; //return 1;
-	int THREADS_PER_BLOCK =8;
+	int THREADS_PER_BLOCK =1024;
 	int themin=255;
 	int themax=0;
 	int isolevel=80;
@@ -680,7 +726,11 @@ int main(int argc, char *argv[])
 
 	vectGrids = (GRIDCELL *)malloc(sizeGRID);
 	vectTriangles= (TRIANGLE *)malloc(sizeTRI); 
-	constructCubes(vectGrids,data,N);
+	cout<<"mem of grid "<<vectGrids<<endl;
+	cout<<"mem of triangulos "<<vectTriangles<<endl;
+	cout<<"asigna memoria sin problemas"<<endl;
+	int numCubos = constructCubes(vectGrids,data);
+	cout<<"pasa"<<endl;
 	/*
 		typedef struct {
 		XYZ p[3];     
@@ -706,31 +756,33 @@ int main(int argc, char *argv[])
 	cout<<"mem of grid "<<d_vectGrids<<endl;
 	cout<<"mem of triangulos "<<d_vectTriangles<<endl;
 	
-	cout<<"separa memoria sin problemas"<<endl;
+
+	cout<<"separa memoria en cuda sin problemas"<<endl;
 	//printGrid("imprimiendo Grid inicial en Host \n ",vectGrids,N);
 	
-
 	cudaEvent_t start, stop;
 	float elapsedTime;
 	cudaEventCreate(&start);
-
-
-	int x = NX; int y = NY ; int z = NZ;
-	int blockX= (NX + THREADS_PER_BLOCK -1)/THREADS_PER_BLOCK;
-	int blockY= (NY + THREADS_PER_BLOCK -1)/THREADS_PER_BLOCK;
-	int blockZ= (NZ + THREADS_PER_BLOCK -1)/THREADS_PER_BLOCK;
+	//int x = NX-1; int y = NY-1 ; int z = NZ-1;
+	/*int blockX= (x + THREADS_PER_BLOCK -1)/THREADS_PER_BLOCK;
+	int blockY= (y + THREADS_PER_BLOCK -1)/THREADS_PER_BLOCK;
+	int blockZ= (z + THREADS_PER_BLOCK -1)/THREADS_PER_BLOCK;
 	cout<<"blocks : "<<blockX<<" threds:  "<<THREADS_PER_BLOCK<<endl;
 	cout<<"blocks : "<<blockY<<" threds:  "<<THREADS_PER_BLOCK<<endl;
-	cout<<"blocks : "<<blockZ<<" threds:  "<<THREADS_PER_BLOCK<<endl;
-	//int blocks= (10 + THREADS_PER_BLOCK -1)/THREADS_PER_BLOCK;
-	/*cout<<"blocks : \n"<<blocks<<"\n threds: \n "<<THREADS_PER_BLOCK<<endl; */
-	dim3 dimGrid(blockX, blockY, blockZ);
-	dim3 dimBlock(THREADS_PER_BLOCK,THREADS_PER_BLOCK, THREADS_PER_BLOCK);
+	cout<<"blocks : "<<blockZ<<" threds:  "<<THREADS_PER_BLOCK<<endl;*/
+
+	//int ntri=0;int d_ntri=0;
+	//cudaMalloc((void **)ntri,int);
+	//cudaMemcpy(d_ntri,ntri,cudaMemcpyHostToDevice);
+
+	int blocks= (N + THREADS_PER_BLOCK -1)/THREADS_PER_BLOCK;
+	cout<<"blocks : \n"<<blocks<<"\n threds: \n "<<THREADS_PER_BLOCK<<endl; 
+	//dim3 dimGrid(blockX, blockY, blockZ);
+	//dim3 dimBlock(THREADS_PER_BLOCK,THREADS_PER_BLOCK, THREADS_PER_BLOCK);
 	cudaEventRecord(start,0);
-	isolevel=10;
 		//copyGRID1<<<dimGrid,dimBlock>>>(d_res,d_vectGrid,x,y,z);
-		PolygoniseCube<<<dimGrid,dimBlock>>>(d_vectTriangles,d_vectGrids,isolevel,x,y,z);
-		//PolygoniseCube<<<blocks,THREADS_PER_BLOCK>>>(d_points,d_vectGrids,isolevel);
+		//PolygoniseCube<<<dimGrid,dimBlock>>>(d_vectTriangles,d_vectGrids,x,y,z);
+		PolygoniseCube<<<blocks,THREADS_PER_BLOCK>>>(d_vectTriangles,d_vectGrids,N);
 		//matrixAdition<<<blocks,THREADS_PER_BLOCK>>>(d_a, d_points,10);
 		//matrixAditionCol<<<blocks2,THREADS_PER_BLOCK>>>( d_c, d_a, d_b,N);
 	cudaEventCreate(&stop);
@@ -741,28 +793,17 @@ int main(int argc, char *argv[])
 
 	TRIANGLE * cpy_vectTriangles;
 	cpy_vectTriangles= (TRIANGLE *)malloc(sizeTRI); 
+	cout<<"crea sin problemas en host"<<endl;
 	cudaMemcpy(cpy_vectTriangles,d_vectTriangles, sizeTRI, cudaMemcpyDeviceToHost);
+	printTriangles("Printing Tringles \n",cpy_vectTriangles,N);
+	CalcNormals("Calculate Normals \n",data,N);
+	int n=0;
 
-	printTriangles("Printing Tringles \n",cpy_vectTriangles,numtri);
 
 	free(vectTriangles); free(vectGrids); free(cpy_vectTriangles);
 	cudaFree(d_vectTriangles); cudaFree(d_vectGrids);
 	return 0;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

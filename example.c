@@ -581,7 +581,7 @@ int triTable[256][16] =
    }
    /* Create the triangles */
    for (i=0;triTable[cubeindex][i]!=-1;i+=3) {
-      tri[ntri].p[0] = vertlist[triTable[cubeindex][i  ]];
+      tri[ntri].p[0] = vertlist[triTable[cubeindex][i]];
       tri[ntri].p[1] = vertlist[triTable[cubeindex][i+1]];
       tri[ntri].p[2] = vertlist[triTable[cubeindex][i+2]];
       ntri++;

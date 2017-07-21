@@ -15,7 +15,7 @@ typedef struct {
 
 typedef struct {
    XYZ p[8];
-   float val[8];
+   char val[8];
 } GRIDCELL;
 
 typedef struct {
@@ -560,7 +560,7 @@ void PolygoniseCube(TRIANGLE * d_vectTriangles,GRIDCELL * g , int n ,int iso)
    		}
    		//printf("ntri %d \n", ntri);	
    }
-}
+}/*
 void printGrid(string a, GRIDCELL * g, int tam)
 {
 	cout<<a;
@@ -569,7 +569,7 @@ void printGrid(string a, GRIDCELL * g, int tam)
 			//printf("%f  %f  %f \n", g[i].p[j].x ,g[i].p[j].y,g[i].p[j].z);
 		      printf("%f \n", g[i].val[j]);		
 }
-
+*/
 int points( TRIANGLE * t,  int tam)
 {
 	int cont=0;
@@ -593,7 +593,7 @@ void printTriangles(string a , TRIANGLE * t,  int tam , int cont)
 	ofstream myfile;
 
 	cout<<"-----------debe estar imprimiendo"<<endl;
-  	myfile.open("FuelIn.pcd");
+  	myfile.open("Engine.pcd");
   	myfile<<"# .PCD v.5 - Point Cloud Data file format"<<endl;
 	myfile<<"VERSION .5"<<endl;
 	myfile<<"FIELDS x y z"<<endl;
@@ -622,15 +622,15 @@ int main(int argc, char *argv[])
 	int i,j,k,c;
 	int ***data;
 	FILE *fptr;
-	int NX =64;//200//200
-	int NY =64;//160//160
-	int NZ =64;//160//160
+	int NX =256;//200//200
+	int NY =256;//160//160
+	int NZ =256;//160//160
 	int N= ((NX-1)*(NY-1)*(NZ-1));
 	cout<<N<<endl; //return 1;
 	int THREADS_PER_BLOCK =512;
 	int themin=255;
 	int themax=0;
-	int isolevel=10;
+	int isolevel=151;
 	//const char* FILENAME = "mri.raw";
 	//assingMem(data);
 	//readFile(fptr,FILENAME,themin, themax,data);
@@ -667,10 +667,10 @@ int main(int argc, char *argv[])
 	}
 	fclose(fptr);
 
-	int sizeGRID= N*sizeof(GRIDCELL);
-	int sizeTRI = N*sizeof(TRIANGLE); 
+	long int sizeGRID= N*sizeof(GRIDCELL);
+	long int sizeTRI = N*sizeof(TRIANGLE); 
 	cout<<"sizeGRID "<<sizeGRID<<endl;
-	cout<<"sizeTRI "<<sizeTRI<<endl;
+	cout<<"sizeTRI  "<<sizeTRI<<endl;
 	GRIDCELL * vectGrids;
 	GRIDCELL * d_vectGrids;
 	TRIANGLE * vectTriangles;
@@ -725,7 +725,7 @@ int main(int argc, char *argv[])
 	cudaMemcpy(cpy_vectTriangles,d_vectTriangles, sizeTRI, cudaMemcpyDeviceToHost);
 	int NT= points(cpy_vectTriangles,N);
 	printTriangles("Printing Tringles \n",cpy_vectTriangles,N,NT);
-	system("pcl_viewer FuelIn.pcd");
+	system("pcl_viewer Engine.pcd");
 	free(vectTriangles); free(vectGrids); free(cpy_vectTriangles);
 	cudaFree(d_vectTriangles); cudaFree(d_vectGrids);
 	return 0;
